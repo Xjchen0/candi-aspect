@@ -1,0 +1,18 @@
+{
+aspect v3.0.0
+dealii v9.6.1
+p4est 2.3.6
+trilinos 14-4-0
+}
+{
+aspect aspect-2.5
+dealii dealii-9.4
+p4est 2.3.2
+trilinos 13-2-0
+}
+{
+aspect aspect-2.4
+dealii dealii-9.3
+p4est 2.3.2
+trilinos 13-2-0
+}
