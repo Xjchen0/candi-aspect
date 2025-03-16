@@ -1,9 +1,7 @@
-candi (Compile &amp; Install)
+candi-aspect (Compile &amp; Install)
 =====
 
-The ``candi.sh`` shell script downloads, configures, builds, and installs
-[deal.II](https://github.com/dealii/dealii) with common dependencies on
-linux-based systems.
+The ``candi-aspect.sh`` shell script downloads, configures, builds, and installs [deal.II](https://github.com/dealii/dealii) with common dependencies on linux-based systems(especially for Fedora/Archlinux) for [ASPECT](https://github.com/geodynamics/aspect). You can use this installer to install and compile ASPECT.
 
 
 
@@ -11,21 +9,53 @@ Quickstart
 ----
 
 The following commands download the current stable version of the installer and
-then install the latest deal.II release and common dependencies:
+then install three versions(in [./version-set](./version-set)) of deal.II release and its correspondent common dependencies:
 
 ```bash
-  git clone https://github.com/dealii/candi.git
-  cd candi
-  ./candi.sh
+  git clone https://github.com/Xjchen0/candi-aspect.git
+  cd candi-aspect
+  chmod +x ./candi-aspect.sh
+  ./candi-aspect.sh -j<N>
 ```
+
+Process
+----
 
 Follow the instructions on the screen
 (you can abort the process by pressing < CTRL > + C)
 
+You should install all the dependencies before you start installation.
+
+For Archlinux, it is recommended to install lower versions of GCC.
+```bash
+  cd ~/Downloads
+  wget https://archive.archlinux.org/packages/g/gcc11/gcc11-11.3.0-2-x86_64.pkg.tar.zst https://archive.archlinux.org/packages/g/gcc11-libs/gcc11-libs-11.3.0-2-x86_64.pkg.tar.zst https://archive.archlinux.org/packages/g/gcc11-fortran/gcc11-fortran-11.3.0-2-x86_64.pkg.tar.zst https://archive.archlinux.org/packages/g/gcc10/gcc10-10.2.0-1-x86_64.pkg.tar.zst https://archive.archlinux.org/packages/g/gcc10-libs/gcc10-libs-10.2.0-1-x86_64.pkg.tar.zst https://archive.archlinux.org/packages/g/gcc10-fortran/gcc10-fortran-10.2.0-1-x86_64.pkg.tar.zst
+  sudo pacman -U gcc11-11.3.0-2-x86_64.pkg.tar.zst gcc11-libs-11.3.0-2-x86_64.pkg.tar.zst gcc11-fortran-11.3.0-2-x86_64.pkg.tar.zst gcc10-10.2.0-1-x86_64.pkg.tar.zst gcc10-libs-10.2.0-1-x86_64.pkg.tar.zst gcc10-fortran-10.2.0-1-x86_64.pkg.tar.zst
+```
+
+When the installer starts, you will choose a version from:
+```bash
+  Available ASPECT versions:
+  1) v3.0.0
+  2) aspect-2.5
+  3) aspect-2.4
+  Select ASPECT version (1-3): 
+```
+These are stable versions available at [ASPECT](https://github.com/geodynamics/aspect)
+
+Then you will switch the version of GCC by creating symlinks under the directory /usr/local/bin/. Reinstalling openmpi is a good way to eatablish links between mpi and gcc.
+
+If error occurred while installing, you should run `./clean.sh` manually to clean intermediate files under `candi-aspect` directory. And in the next installation, you are recommended to choose `y` when it ask `Clean your past build?(y/N)`. However, if you just install another version of ASPECT which you plan to compile with the same GCC compiler and deal.II that you have successfully launched, you don't need to clean your past build.
+
+At last, if your version of gcc is changed, you can run ./candi_pre/gcc_version_change1x.sh or the shell script in your aspect directory.
+
+If you want to know more about version mapping, you can check [Why use candi-aspect](###Why)
 
 ### Examples
 
-#### Install deal.II on RHEL 7, CentOS 7 or Fedora:
+You'd better use the origin installer from [deal.II/candi](https://github.com/dealii/candi) if your system is the same as what shown below.
+
+#### Install deal.II on RHEL 7, CentOS 7:
 ```bash
   module load mpi/openmpi-`uname -i`
   ./candi.sh
@@ -69,19 +99,11 @@ Note that you probably also want to change the prefix path, or
 the path to ``BLAS`` and ``LAPACK`` in the configuration file
 (see documentation below).
 
-#### Install deal.II on a system without pre-installed git:
-
-```bash
-  wget https://github.com/dealii/candi/archive/master.tar.gz
-  tar -xzf master.tar.gz
-  cd candi-master
-  ./candi.sh
-```
-
 Note that in this case you will need to activate the installation of git by
 uncommenting the line `#PACKAGES="${PACKAGES} once:git"` in
 [candi.cfg](candi.cfg).
 
+It is recommended to edit local_example.cfg to config deal.II by self.
 
 
 Advanced Configuration
@@ -210,3 +232,14 @@ Note that you need to have a previous run of candi and
 you must not remove the ``UNPACK_PATH`` directory.
 Then you can modify source files in ``UNPACK_PATH`` of a package and
 run candi again.
+
+### Why use candi-aspect
+- GCC is too new for ASPECT and deal.II in systems that are rolling updated.
+- Using latest deal.II to compile ASPECT would make ASPECT broken.
+- If you want use several versions of ASPECT, you will install and compile different versions of deal.II and its dependencies, but some should be compiled by gcc-10 while others by gcc-11. Thus, there is necessity to divide these into different directories.
+
+How to make versions mapped?
+- deal.II version 9.5 and lower need C++14 standard library but 9.6 and newer need C++17(referred from [deal.II_developer_README](https://www.dealii.org/developer/readme.html#supported))
+- Trilinos is depended on by deal.II and it changed C++14 to C++17 when it was updated to version 13.4(referred from [an issue of trilinos](https://github.com/trilinos/Trilinos/issues/6260#issuecomment-2712630461)).
+- Though we can use one version of GCC to use different C++ libraries, `candi` or the dependencies' `CMakefile` seems to not explicitly select it with the `-std=c++xx` command-line flag. The information about GCC and its default C++ library are available at https://gcc.gnu.org/projects/cxx-status.html#cxx17
+- ASPECT is compiled with deal.II and its dependencies are listed at its GitHub repositories `https://github.com/geodynamics/aspect/tree/<branch>`
